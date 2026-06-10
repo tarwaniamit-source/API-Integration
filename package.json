@@ -1,0 +1,12 @@
+{
+  "name": "api-integration-builder",
+  "version": "1.0.0",
+  "description": "No-code workspace to configure, test, and ship SaaS API connectors. Sandbox (browser) + production (proxy server).",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server/index.js",
+    "sandbox": "node -e \"const p=process.env.PORT||8080;require('http').createServer((q,s)=>{const f=require('path').join(process.cwd(),q.url==='/'?'index.html':decodeURIComponent(q.url.split('?')[0]));require('fs').readFile(f,(e,d)=>{if(e){s.writeHead(404);return s.end('not found')}s.end(d)})}).listen(p,()=>console.log('Sandbox -> http://localhost:'+p))\""
+  }
+}

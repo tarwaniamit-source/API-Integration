@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0E1326">
+<meta name="description" content="API Integration Builder — a no-code workspace to configure, test, and ship SaaS API connectors.">
+<title>API Integration Builder</title>
+<link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1326;          /* app shell */
+    --canvas:#F6F7FB;      /* working canvas */
+    --surface:#FFFFFF;
+    --surface-2:#FBFBFE;
+    --line:#E5E7F0;
+    --line-2:#EEF0F6;
+    --ink:#171A2B;
+    --ink-2:#454A63;
+    --muted:#8C92AB;
+    --primary:#4C36E6;     /* indigo */
+    --primary-soft:#EEEBFD;
+    --primary-ink:#2E1F9E;
+    --link:#06A5C0;        /* cyan — "connected" */
+    --link-soft:#E2F7FB;
+    --ok:#16A571;
+    --ok-soft:#E4F6EF;
+    --warn:#E08A1E;
+    --warn-soft:#FCF1DF;
+    --bad:#DD4C5B;
+    --bad-soft:#FBE9EB;
+    --ui:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+    --r:12px;
+    --shadow:0 1px 2px rgba(20,26,55,.05),0 8px 28px rgba(20,26,55,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--body);color:var(--ink);background:var(--canvas);-webkit-font-smoothing:antialiased;line-height:1.5}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:14px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  h1,h2,h3,h4{font-family:var(--ui);letter-spacing:-.01em;line-height:1.2}
+
+  .layout{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+  @media(max-width:860px){.layout{grid-template-columns:1fr}}
+
+  /* ---------- Sidebar ---------- */
+  aside{background:var(--bg);color:#C9CEE6;padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+  @media(max-width:860px){aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;padding:14px}}
+  .logo{display:flex;align-items:center;gap:10px;padding:6px 8px 18px}
+  @media(max-width:860px){.logo{padding:0 8px 0 0;flex:1}}
+  .logo .mark{width:32px;height:32px;flex-shrink:0}
+  .logo b{font-family:var(--ui);font-weight:800;font-size:17px;color:#fff;letter-spacing:-.02em;line-height:1.05}
+  .logo span{display:block;font-size:10.5px;color:#7F87AD;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .navbtn{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:#AEB4D2;font-weight:600;font-size:14px;width:100%;text-align:left;transition:background .15s,color .15s}
+  .navbtn svg{width:19px;height:19px;opacity:.85}
+  .navbtn:hover{background:rgba(255,255,255,.05);color:#fff}
+  .navbtn.on{background:var(--primary);color:#fff}
+  .navbtn.on svg{opacity:1}
+  .navbtn .count{margin-left:auto;font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.12);padding:2px 7px;border-radius:20px}
+  aside .foot{margin-top:auto;font-size:11px;color:#5B6288;padding:10px 10px 0;line-height:1.5}
+  @media(max-width:860px){aside .foot{display:none}.navbtn{width:auto}}
+  .mode-badge{display:inline-flex;align-items:center;gap:8px;margin:2px 8px 12px;padding:6px 11px;border-radius:20px;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.06);color:#AEB4D2;align-self:flex-start}
+  .mode-badge .dot{width:8px;height:8px;border-radius:50%;background:#E08A1E;box-shadow:0 0 0 3px rgba(224,138,30,.18)}
+  .mode-badge.prod{color:#7ef0c8;background:rgba(6,224,200,.1)}
+  .mode-badge.prod .dot{background:#06E0C8;box-shadow:0 0 0 3px rgba(6,224,200,.18)}
+  @media(max-width:860px){.mode-badge{margin:0}}
+  .transport{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:16px}
+  .transport button{padding:8px 13px;font-weight:600;font-size:12.5px;color:var(--muted);background:var(--surface);display:flex;align-items:center;gap:6px}
+  .transport button.on{background:var(--primary);color:#fff}
+  .transport button:disabled{opacity:.4;cursor:not-allowed}
+  .transport .tdot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.7}
+  /* stage banners */
+  .stage{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:var(--r);margin:6px 0 2px}
+  .stage h3{font-size:15.5px;font-weight:800}
+  .stage p{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .stage>div{flex:1}
+  #stage-sandbox{background:linear-gradient(90deg,var(--link-soft),transparent)}
+  #stage-prod{background:linear-gradient(90deg,var(--primary-soft),transparent)}
+  .stage-tag{font-size:11px;font-weight:800;letter-spacing:.04em;padding:5px 10px;border-radius:8px;flex-shrink:0}
+  .stage-tag.s{background:var(--link);color:#fff}
+  .stage-tag.p{background:var(--primary);color:#fff}
+  .stage-state{font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:20px;background:var(--surface);border:1px solid var(--line);color:var(--muted);flex-shrink:0}
+  .stage-state.ok{color:#0f7a53;background:var(--ok-soft);border-color:transparent}
+  .stage-state.ready{color:var(--primary-ink);background:var(--primary-soft);border-color:transparent}
+  /* checklist + envvars */
+  .checklist{display:flex;flex-direction:column;gap:7px}
+  .chk{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-2)}
+  .chk .box{width:19px;height:19px;border-radius:6px;border:1.5px solid var(--line);display:grid;place-items:center;flex-shrink:0;font-size:12px}
+  .chk.done{color:var(--ink)}
+  .chk.done .box{background:var(--ok);border-color:var(--ok);color:#fff}
+  .envvars{display:flex;flex-direction:column;gap:6px}
+  .envvar{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+  .envvar .nm{color:var(--primary-ink);font-weight:700}
+  .envvar .for{color:var(--muted);margin-left:auto;font-family:var(--body);font-size:11.5px}
+  .prod-hint{font-size:12px;color:var(--muted)}
+  .badge.prod{background:var(--primary-soft);color:var(--primary-ink)}
+  .badge.tested{background:var(--ok-soft);color:#0f7a53}
+
+  /* ---------- Main ---------- */
+  main{padding:30px 34px 80px;max-width:1180px;width:100%}
+  @media(max-width:560px){main{padding:20px 16px 60px}}
+  .view{display:none;animation:fade .25s ease}
+  .view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .page-head .eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--primary);font-weight:700}
+  .page-head h1{font-size:27px;font-weight:800;margin-top:5px}
+  .page-head p{color:var(--ink-2);font-size:14.5px;margin-top:4px;max-width:560px}
+
+  /* ---------- Buttons ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);transition:.12s;white-space:nowrap}
+  .btn:hover{border-color:#cfd3e3;background:var(--surface-2)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--primary);color:#fff;border-color:transparent}
+  .btn.primary:hover{background:#3f2bcf}
+  .btn.cyan{background:var(--link);color:#fff;border-color:transparent}
+  .btn.cyan:hover{background:#0894ad}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:7px 11px;font-size:13px;border-radius:9px}
+  .btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+  .btn.danger:hover{background:var(--bad-soft)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn svg{width:16px;height:16px}
+
+  /* ---------- Cards / catalog ---------- */
+  .grid{display:grid;gap:16px}
+  .g-cat{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+  .g-int{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+  .cat-card{padding:18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:.14s}
+  .cat-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 10px 30px rgba(76,54,230,.12)}
+  .vendor-ico{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;font-family:var(--ui);font-weight:800;font-size:18px;color:#fff}
+  .cat-card h3{font-size:15.5px;font-weight:700}
+  .cat-card .cat{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .cat-card p{font-size:13px;color:var(--ink-2);flex:1}
+  .cat-card .auth-chip{font-size:11px;font-family:var(--mono);color:var(--primary-ink);background:var(--primary-soft);padding:3px 8px;border-radius:6px;align-self:flex-start}
+
+  /* integration list card */
+  .int-card{padding:18px;display:flex;flex-direction:column;gap:12px}
+  .int-card .top{display:flex;align-items:center;gap:12px}
+  .int-card h3{font-size:16px;font-weight:700;flex:1}
+  .int-card .meta{font-size:12.5px;color:var(--muted)}
+  .int-card .row2{display:flex;gap:8px;flex-wrap:wrap}
+  .badge{font-size:11px;font-weight:600;padding:4px 9px;border-radius:7px;display:inline-flex;align-items:center;gap:5px}
+  .badge.ep{background:var(--link-soft);color:#0a7d92}
+  .badge.map{background:var(--ok-soft);color:#0f7a53}
+  .badge.auth{background:var(--primary-soft);color:var(--primary-ink)}
+  .int-card .acts{display:flex;gap:8px;border-top:1px solid var(--line-2);padding-top:12px}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty svg{width:46px;height:46px;opacity:.4;margin-bottom:14px}
+  .empty h3{font-size:17px;color:var(--ink);margin-bottom:6px}
+
+  /* ---------- Builder ---------- */
+  .pipeline{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:4px;margin-bottom:24px}
+  .pnode{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:13px 15px;box-shadow:var(--shadow);position:relative}
+  .pnode+.pnode{margin-left:26px}
+  .pnode+.pnode::before{content:"";position:absolute;left:-26px;top:50%;width:26px;height:2px;background:repeating-linear-gradient(90deg,var(--muted) 0 5px,transparent 5px 9px)}
+  .pnode+.pnode::after{content:"";position:absolute;left:-9px;top:50%;transform:translateY(-50%);border-left:7px solid var(--muted);border-top:5px solid transparent;border-bottom:5px solid transparent}
+  .pnode .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .pnode .v{font-size:14px;font-weight:700;font-family:var(--ui);margin-top:3px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pnode .v.dim{color:var(--muted);font-weight:600}
+  .pnode.live{border-color:var(--primary)}
+
+  .builder-grid{display:grid;grid-template-columns:1fr;gap:18px}
+  details.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+  details.sec>summary{list-style:none;cursor:pointer;padding:16px 20px;display:flex;align-items:center;gap:12px;font-family:var(--ui);font-weight:700;font-size:15.5px}
+  details.sec>summary::-webkit-details-marker{display:none}
+  .sec-num{width:26px;height:26px;border-radius:8px;background:var(--primary-soft);color:var(--primary-ink);display:grid;place-items:center;font-size:13px;font-weight:800;flex-shrink:0}
+  .sec-sub{font-weight:500;font-size:12.5px;color:var(--muted);margin-left:auto;font-family:var(--body)}
+  details.sec[open]>summary{border-bottom:1px solid var(--line-2)}
+  .sec-body{padding:20px}
+  .chev{margin-left:6px;transition:transform .2s;color:var(--muted)}
+  details[open] .chev{transform:rotate(90deg)}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+  .field label{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+  .field .help{font-size:11.5px;color:var(--muted);font-weight:400}
+  .ctrl{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--ink);outline:none;transition:border-color .14s,box-shadow .14s;width:100%}
+  .ctrl:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+  textarea.ctrl{resize:vertical;min-height:84px;font-family:var(--mono);font-size:12.5px}
+  .row{display:grid;gap:14px}
+  @media(min-width:620px){.row.r2{grid-template-columns:1fr 1fr}.row.r3{grid-template-columns:1fr 1fr 1fr}.row.method{grid-template-columns:120px 1fr}}
+
+  .kv{display:grid;grid-template-columns:1fr 1fr 34px;gap:8px;margin-bottom:8px}
+  .kv .ctrl{padding:8px 10px;font-family:var(--mono);font-size:12.5px}
+  .kv button{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-size:18px;line-height:1}
+  .kv button:hover{color:var(--bad);border-color:var(--bad-soft)}
+  .add-row{font-size:13px;color:var(--primary);font-weight:600;display:inline-flex;align-items:center;gap:5px}
+
+  .endpoint{border:1px solid var(--line);border-radius:11px;padding:16px;margin-bottom:14px;background:var(--surface-2)}
+  .endpoint .ep-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .method-pill{font-family:var(--mono);font-weight:700;font-size:11px;padding:4px 8px;border-radius:6px;color:#fff}
+  .m-GET{background:#16A571}.m-POST{background:#4C36E6}.m-PUT{background:#E08A1E}.m-PATCH{background:#06A5C0}.m-DELETE{background:#DD4C5B}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg button{padding:9px 14px;font-weight:600;font-size:13px;color:var(--muted);background:var(--surface)}
+  .seg button.on{background:var(--primary);color:#fff}
+
+  .map-row{display:grid;grid-template-columns:1fr 24px 1fr 34px;gap:8px;align-items:center;margin-bottom:8px}
+  .map-row .arrow{color:var(--muted);text-align:center}
+
+  /* test/output */
+  .out{background:#0E1326;border-radius:11px;overflow:hidden}
+  .out-head{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid #232A45}
+  .out-head .status{font-family:var(--mono);font-weight:700;font-size:12.5px;padding:3px 9px;border-radius:6px}
+  .st-ok{background:rgba(22,165,113,.2);color:#5ee0a6}
+  .st-bad{background:rgba(221,76,91,.2);color:#ff9aa4}
+  .st-idle{background:rgba(255,255,255,.08);color:#9aa1c4}
+  .out-head .url{font-family:var(--mono);font-size:11.5px;color:#8b93bd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  pre.code{margin:0;padding:15px;color:#d7dcf5;font-family:var(--mono);font-size:12.5px;line-height:1.6;overflow:auto;max-height:340px;white-space:pre-wrap;word-break:break-word}
+  .tabs-mini{display:flex;gap:4px;background:#1a2138;padding:4px;border-radius:9px;margin-bottom:12px}
+  .tabs-mini button{flex:1;padding:8px;border-radius:6px;font-weight:600;font-size:12.5px;color:#9aa1c4}
+  .tabs-mini button.on{background:var(--primary);color:#fff}
+  .cors-note{font-size:12px;color:var(--warn);background:var(--warn-soft);padding:9px 12px;border-radius:8px;margin-top:12px;display:flex;gap:8px}
+
+  /* sticky save bar */
+  .savebar{position:sticky;bottom:0;margin:24px -34px -80px;padding:14px 34px;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;z-index:20}
+  @media(max-width:560px){.savebar{margin:24px -16px -60px;padding:12px 16px}}
+  .savebar .name{font-weight:700;font-family:var(--ui)}
+  .savebar .spacer{flex:1}
+
+  /* toast */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:11px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.28s;z-index:90;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.bad{background:var(--bad)}.toast.ok{background:var(--ok)}
+
+  .kbd{font-family:var(--mono);font-size:11px;background:var(--line-2);padding:1px 6px;border-radius:5px;color:var(--ink-2)}
+  .inline-code{font-family:var(--mono);font-size:12.5px;background:var(--line-2);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- ============ SIDEBAR ============ -->
+  <aside>
+    <div class="logo">
+      <img class="mark" src="assets/logo.svg" alt="">
+      <div><b>Integration<br>Builder</b><span>No-code API connectors</span></div>
+    </div>
+    <div class="mode-badge" id="modeBadge" title="Where live test requests are sent">
+      <span class="dot"></span><span id="modeText">Sandbox</span>
+    </div>
+    <button class="navbtn on" data-v="integrations" onclick="nav('integrations')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      My Integrations <span class="count" id="cnt">0</span></button>
+    <button class="navbtn" data-v="catalog" onclick="nav('catalog')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Connector Catalog</button>
+    <button class="navbtn" data-v="builder" onclick="newIntegration()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+      New Integration</button>
+    <div class="foot">
+      Data stays in your browser.<br>Export any integration as JSON to share or version-control.
+    </div>
+  </aside>
+
+  <main>
+    <!-- ============ MY INTEGRATIONS ============ -->
+    <section class="view on" id="view-integrations">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Workspace</div>
+          <h1>My Integrations</h1>
+          <p>Every connector you build lives here. Open one to edit, test it live, or export the config.</p>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn" onclick="importJson()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Import</button>
+          <button class="btn primary" onclick="newIntegration()">New integration</button>
+        </div>
+      </div>
+      <div class="grid g-int" id="intList"></div>
+    </section>
+
+    <!-- ============ CATALOG ============ -->
+    <section class="view" id="view-catalog">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow">Templates</div>
+          <h1>Connector Catalog</h1>
+          <p>Start from a pre-filled template for a common SaaS API, or build from a blank canvas. Templates set the base URL, auth pattern, and a starter endpoint.</p>
+        </div>
+      </div>
+      <div class="grid g-cat" id="catList"></div>
+    </section>
+
+    <!-- ============ BUILDER ============ -->
+    <section class="view" id="view-builder">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow" id="b-eyebrow">New connector</div>
+          <h1 id="b-title">Build an integration</h1>
+          <p>Configure the connection, define endpoints, map the response to a clean schema, then test it live.</p>
+        </div>
+        <button class="btn ghost" onclick="nav('integrations')">← Back</button>
+      </div>
+
+      <!-- live pipeline (signature) -->
+      <div class="pipeline" id="pipeline"></div>
+
+      <div class="builder-grid">
+        <!-- 1. details -->
+        <details class="sec" open>
+          <summary><span class="sec-num">1</span> Connection details <span class="sec-sub" id="sub-1">Name &amp; base URL</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="sec-body">
+            <div class="row r2">
+              <div class="field"><label>Integration name</label><input class="ctrl" id="f-name" placeholder="e.g. Slack — User Directory" oninput="syncLive()"></div>
+              <div class="field"><label>Vendor / app</label><input class="ctrl" id="f-vendor" placeholder="e.g. Slack" oninput="syncLive()"></div>
+            </div>
+            <div class="field"><label>Category</label>
+              <select class="ctrl" id="f-category" onchange="syncLive()">
+                <option>Identity / SSO</option><option>HRIS</option><option>Finance</option>
+                <option>Communication</option><option>CRM</option><option>Productivity</option>
+                <option>Security</option><option>Developer</option><option>Other</option>
+              </select></div>
+            <div class="row r2">
+              <div class="field"><label>Sandbox base URL <span class="help">— safe / test endpoint</span></label><input class="ctrl mono" id="f-sandboxurl" placeholder="https://sandbox.api.example.com/v1" oninput="syncLive()"></div>
+              <div class="field"><label>Production base URL <span class="help">— live endpoint</span></label><input class="ctrl mono" id="f-produrl" placeholder="https://api.example.com/v1" oninput="syncLive()"></div>
+            </div>
+            <div class="field"><label>Description <span class="help">— what data this connector pulls and why</span></label>
+              <textarea class="ctrl" id="f-desc" style="font-family:var(--body);min-height:60px" placeholder="Pulls the list of active users and their roles for license reconciliation."></textarea></div>
+          </div>
+        </details>
+
+        <!-- 2. auth -->
+        <details class="sec" open>
+          <summary><span class="sec-num">2</span> Authentication <span class="sec-sub" id="sub-2">None</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="sec-body">
+            <div class="field"><label>Auth method</label>
+              <select class="ctrl" id="f-auth" onchange="renderAuth();syncLive()">
+                <option value="none">None</option>
+                <option value="apiKey">API Key</option>
+                <option value="bearer">Bearer Token</option>
+                <option value="basic">Basic Auth</option>
+                <option value="oauth2">OAuth 2.0 (Client Credentials)</option>
+              </select></div>
+            <div id="authFields"></div>
+            <div class="cors-note" style="background:var(--primary-soft);color:var(--primary-ink)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M12 1l3 5 6 1-4.5 4 1 6L12 20l-5.5 3 1-6L3 7l6-1z"/></svg>
+              Secrets are stored locally only and rendered as environment-variable placeholders in generated code — never hard-code them in a repo.
+            </div>
+          </div>
+        </details>
+
+        <!-- 3. endpoints -->
+        <details class="sec" open>
+          <summary><span class="sec-num">3</span> Endpoints <span class="sec-sub" id="sub-3">0 defined</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="sec-body">
+            <div id="epList"></div>
+            <button class="btn sm" onclick="addEndpoint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add endpoint</button>
+          </div>
+        </details>
+
+        <!-- 4. mapping -->
+        <details class="sec">
+          <summary><span class="sec-num">4</span> Field mapping <span class="sec-sub" id="sub-4">Map response → schema</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="sec-body">
+            <p style="font-size:13px;color:var(--ink-2);margin-bottom:14px">Normalize the vendor's response into a clean, consistent schema. Left = your canonical field, right = the JSON path in the response (e.g. <span class="inline-code">data.user.email</span>).</p>
+            <div class="map-row" style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em"><span>Canonical field</span><span></span><span>Source path</span><span></span></div>
+            <div id="mapList"></div>
+            <button class="btn sm" onclick="addMapping()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add mapping</button>
+          </div>
+        </details>
+
+        <!-- ============ STAGE 1 · SANDBOX ============ -->
+        <div class="stage" id="stage-sandbox">
+          <span class="stage-tag s">Stage 1</span>
+          <div><h3>Sandbox — test it safely</h3><p>Run requests against your sandbox endpoint until the connector behaves. Nothing here touches production.</p></div>
+          <span class="stage-state" id="sandboxState">Not tested</span>
+        </div>
+
+        <details class="sec" id="sec-sandbox" open>
+          <summary><span class="sec-num">5</span> Run in sandbox <span class="sec-sub" id="sub-5">against sandbox URL</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="sec-body">
+            <div class="transport" id="transport">
+              <button class="on" data-t="auto" onclick="setTransport('auto')"><span class="tdot"></span>Auto</button>
+              <button data-t="direct" onclick="setTransport('direct')">Browser</button>
+              <button data-t="proxy" onclick="setTransport('proxy')" id="t-proxy" disabled>Server proxy</button>
+            </div>
+            <div class="row method" style="grid-template-columns:1fr auto;align-items:end;margin-bottom:14px">
+              <div class="field" style="margin:0"><label>Endpoint to run</label>
+                <select class="ctrl" id="f-testep" onchange="renderCode()"></select></div>
+              <button class="btn cyan" onclick="runTest('sandbox')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Send request</button>
+            </div>
+            <div class="tabs-mini" id="codeTabs">
+              <button class="on" data-c="response" onclick="codeTab('response')">Response</button>
+              <button data-c="curl" onclick="codeTab('curl')">cURL</button>
+              <button data-c="fetch" onclick="codeTab('fetch')">JS fetch</button>
+              <button data-c="python" onclick="codeTab('python')">Python</button>
+            </div>
+            <div class="out">
+              <div class="out-head"><span class="status st-idle" id="outStatus">idle</span><span class="url mono" id="outUrl">—</span></div>
+              <pre class="code" id="outBody">Configure an endpoint, then hit “Send request”. In the browser this works for CORS-enabled APIs; the server proxy (production build) works for any API.</pre>
+            </div>
+            <div class="cors-note">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+              A successful sandbox test unlocks promotion to production below.
+            </div>
+          </div>
+        </details>
+
+        <!-- ============ STAGE 2 · PRODUCTION ============ -->
+        <div class="stage" id="stage-prod">
+          <span class="stage-tag p">Stage 2</span>
+          <div><h3>Production — ready to deploy</h3><p>Once the sandbox test passes, confirm readiness and promote the connector to your live endpoint.</p></div>
+          <span class="stage-state" id="prodState">Draft</span>
+        </div>
+
+        <details class="sec" id="sec-prod">
+          <summary><span class="sec-num">6</span> Promote to production <span class="sec-sub" id="sub-6">readiness &amp; deploy</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="sec-body">
+            <h4 style="font-size:13px;font-weight:700;margin-bottom:10px">Readiness checklist</h4>
+            <div id="checklist" class="checklist"></div>
+
+            <h4 style="font-size:13px;font-weight:700;margin:20px 0 8px">Required environment variables</h4>
+            <p style="font-size:12.5px;color:var(--ink-2);margin-bottom:10px">Set these on your server; reference them as <span class="inline-code">${ENV:NAME}</span> in headers so secrets never live in the browser or the repo.</p>
+            <div id="envvars" class="envvars"></div>
+
+            <h4 style="font-size:13px;font-weight:700;margin:20px 0 8px">Deploy</h4>
+            <div class="out"><pre class="code" id="deployCode"></pre></div>
+
+            <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
+              <button class="btn" onclick="runTest('prod')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run production test</button>
+              <button class="btn primary" id="promoteBtn" onclick="promote()" disabled>Mark ready for production</button>
+              <span class="prod-hint" id="promoteHint">Pass the sandbox test first.</span>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="savebar">
+        <span class="name" id="saveName">Untitled integration</span>
+        <span class="spacer"></span>
+        <button class="btn" onclick="exportCurrent()">Export JSON</button>
+        <button class="btn primary" onclick="saveIntegration()">Save integration</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileInput" accept="application/json" style="display:none">
+
+<script>
+"use strict";
+/* =====================================================================
+   API Integration Builder — self-contained, no backend, no branding.
+   Configure connectors, define endpoints, map responses, test live,
+   and export. Everything persists in localStorage on this device.
+   ===================================================================== */
+
+const KEY = "aib.integrations.v1";
+const uid = () => Math.random().toString(36).slice(2,9);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- catalog templates (generic, real public-style APIs) ---------- */
+const TEMPLATES = [
+  { vendor:"Slack", color:"#4A154B", category:"Communication", baseUrl:"https://slack.com/api",
+    auth:"bearer", desc:"Pull the workspace user directory to reconcile active accounts and licenses.",
+    ep:{ name:"List users", method:"GET", path:"/users.list" },
+    map:[["userId","members[].id"],["email","members[].profile.email"],["name","members[].real_name"],["active","members[].deleted"]] },
+  { vendor:"GitHub", color:"#24292F", category:"Developer", baseUrl:"https://api.github.com",
+    auth:"bearer", desc:"Read organization members and their roles for access reviews.",
+    ep:{ name:"List org members", method:"GET", path:"/orgs/{org}/members" },
+    map:[["userId","[].id"],["login","[].login"],["profileUrl","[].html_url"]] },
+  { vendor:"Salesforce", color:"#00A1E0", category:"CRM", baseUrl:"https://yourInstance.salesforce.com/services/data/v60.0",
+    auth:"oauth2", desc:"Query user records to track licensed seats and last login.",
+    ep:{ name:"Query users", method:"GET", path:"/query?q=SELECT+Id,Email,Name,IsActive+FROM+User" },
+    map:[["userId","records[].Id"],["email","records[].Email"],["name","records[].Name"],["active","records[].IsActive"]] },
+  { vendor:"Okta", color:"#007DC1", category:"Identity / SSO", baseUrl:"https://your-domain.okta.com/api/v1",
+    auth:"apiKey", desc:"Discover SSO-connected apps and user assignments for license harvesting.",
+    ep:{ name:"List users", method:"GET", path:"/users" },
+    map:[["userId","[].id"],["email","[].profile.email"],["status","[].status"]] },
+  { vendor:"Google Workspace", color:"#1A73E8", category:"Productivity", baseUrl:"https://admin.googleapis.com/admin/directory/v1",
+    auth:"oauth2", desc:"List directory users to map seats against the HRIS roster.",
+    ep:{ name:"List users", method:"GET", path:"/users?customer=my_customer" },
+    map:[["userId","users[].id"],["email","users[].primaryEmail"],["name","users[].name.fullName"],["suspended","users[].suspended"]] },
+  { vendor:"Stripe", color:"#635BFF", category:"Finance", baseUrl:"https://api.stripe.com/v1",
+    auth:"bearer", desc:"Read subscriptions and invoices to attribute SaaS spend.",
+    ep:{ name:"List subscriptions", method:"GET", path:"/subscriptions" },
+    map:[["subId","data[].id"],["customer","data[].customer"],["status","data[].status"],["amount","data[].plan.amount"]] },
+  { vendor:"JSONPlaceholder", color:"#16A571", category:"Developer", baseUrl:"https://jsonplaceholder.typicode.com",
+    auth:"none", desc:"A live, CORS-friendly demo API — great for testing the builder end to end.",
+    ep:{ name:"List users", method:"GET", path:"/users" },
+    map:[["userId","[].id"],["email","[].email"],["name","[].name"],["company","[].company.name"]] },
+  { vendor:"Blank", color:"#454A63", category:"Other", baseUrl:"",
+    auth:"none", desc:"Start from an empty canvas and configure everything yourself.",
+    ep:{ name:"New request", method:"GET", path:"/" }, map:[["id",""]] },
+];
+
+/* ---------- state ---------- */
+let store = [];
+let cur = null;            // integration being edited
+let codeView = "response";
+let lastTest = null;
+let transport = "auto";       // auto | direct | proxy
+let proxyAvailable = false;   // set by detectMode()
+
+function load(){ try{ store = JSON.parse(localStorage.getItem(KEY))||[]; }catch(e){ store=[]; } }
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+function blank(){
+  return { id:uid(), name:"", vendor:"", category:"Other", sandboxUrl:"", prodUrl:"", desc:"",
+    auth:{type:"none"}, endpoints:[], mappings:[], color:"#4C36E6",
+    tested:false, prodReady:false,
+    createdAt:Date.now(), updatedAt:Date.now() };
+}
+const vColor = (s)=>{ let h=0; for(const c of (s||"x")) h=(h*31+c.charCodeAt(0))%360; return `hsl(${h} 58% 48%)`; };
+const initials = (s)=> (s||"?").trim().slice(0,2).toUpperCase();
+
+/* ---------- navigation ---------- */
+function nav(v){
+  document.querySelectorAll(".view").forEach(s=>s.classList.toggle("on", s.id==="view-"+v));
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("on", b.dataset.v===v));
+  if(v==="integrations") renderList();
+  if(v==="catalog") renderCatalog();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ---------- catalog ---------- */
+function renderCatalog(){
+  $("catList").innerHTML = TEMPLATES.map((t,i)=>`
+    <div class="card cat-card" onclick="fromTemplate(${i})">
+      <div class="vendor-ico" style="background:${t.color}">${initials(t.vendor)}</div>
+      <div class="cat">${esc(t.category)}</div>
+      <h3>${esc(t.vendor)}</h3>
+      <p>${esc(t.desc)}</p>
+      <span class="auth-chip">${authLabel(t.auth)}</span>
+    </div>`).join("");
+}
+function authLabel(a){ return {none:"No auth",apiKey:"API Key",bearer:"Bearer",basic:"Basic",oauth2:"OAuth 2.0"}[a]||a; }
+function fromTemplate(i){
+  const t = TEMPLATES[i];
+  cur = blank();
+  cur.vendor=t.vendor==="Blank"?"":t.vendor; cur.category=t.category;
+  cur.sandboxUrl=t.baseUrl; cur.prodUrl=t.baseUrl;
+  cur.desc=t.desc; cur.color=t.color; cur.name=t.vendor==="Blank"?"":t.vendor+" integration";
+  cur.auth={type:t.auth}; defaultAuth(cur.auth);
+  cur.endpoints=[{ id:uid(), name:t.ep.name, method:t.ep.method, path:t.ep.path, query:[], headers:[], body:"" }];
+  cur.mappings=(t.map||[]).map(m=>({canonical:m[0],source:m[1]}));
+  openBuilder();
+}
+function defaultAuth(a){
+  if(a.type==="apiKey"){ a.keyName=a.keyName||"X-API-Key"; a.in=a.in||"header"; a.keyValue=a.keyValue||""; }
+  if(a.type==="bearer"){ a.token=a.token||""; }
+  if(a.type==="basic"){ a.user=a.user||""; a.pass=a.pass||""; }
+  if(a.type==="oauth2"){ a.tokenUrl=a.tokenUrl||""; a.clientId=a.clientId||""; a.clientSecret=a.clientSecret||""; a.scope=a.scope||""; }
+}
+
+/* ---------- list ---------- */
+function renderList(){
+  $("cnt").textContent = store.length;
+  const wrap = $("intList");
+  if(!store.length){
+    wrap.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><path d="M10 6.5h4a3 3 0 0 1 3 3V14"/></svg>
+      <h3>No integrations yet</h3>
+      <p>Start from a catalog template or build one from scratch.</p>
+      <div style="margin-top:18px;display:flex;gap:10px;justify-content:center">
+        <button class="btn" onclick="nav('catalog')">Browse catalog</button>
+        <button class="btn primary" onclick="newIntegration()">New integration</button>
+      </div></div>`;
+    return;
+  }
+  wrap.innerHTML = store.map(it=>`
+    <div class="card int-card">
+      <div class="top">
+        <div class="vendor-ico" style="background:${it.color||vColor(it.vendor)}">${initials(it.vendor||it.name)}</div>
+        <div style="flex:1;min-width:0">
+          <h3>${esc(it.name||"Untitled")}</h3>
+          <div class="meta">${esc(it.category)} · updated ${ago(it.updatedAt)}</div>
+        </div>
+      </div>
+      <div class="row2">
+        <span class="badge auth">${authLabel(it.auth&&it.auth.type)}</span>
+        <span class="badge ep">${it.endpoints.length} endpoint${it.endpoints.length===1?"":"s"}</span>
+        <span class="badge map">${it.mappings.length} field${it.mappings.length===1?"":"s"}</span>
+        ${it.prodReady?'<span class="badge prod">● Production-ready</span>':(it.tested?'<span class="badge tested">● Sandbox tested</span>':'<span class="badge" style="background:var(--line-2);color:var(--muted)">● Draft</span>')}
+      </div>
+      <div class="acts">
+        <button class="btn sm" onclick="editIntegration('${it.id}')">Open</button>
+        <button class="btn sm" onclick="dupIntegration('${it.id}')">Duplicate</button>
+        <button class="btn sm" onclick="exportOne('${it.id}')">Export</button>
+        <button class="btn sm danger" style="margin-left:auto" onclick="delIntegration('${it.id}')">Delete</button>
+      </div>
+    </div>`).join("");
+}
+function ago(ts){ const s=(Date.now()-ts)/1000; if(s<60)return"just now"; const m=s/60; if(m<60)return Math.floor(m)+"m ago"; const h=m/60; if(h<24)return Math.floor(h)+"h ago"; return Math.floor(h/24)+"d ago"; }
+
+function newIntegration(){ cur = blank(); openBuilder(); }
+function editIntegration(id){ cur = JSON.parse(JSON.stringify(store.find(x=>x.id===id))); openBuilder(); }
+function dupIntegration(id){ const c=JSON.parse(JSON.stringify(store.find(x=>x.id===id))); c.id=uid(); c.name=(c.name||"Untitled")+" (copy)"; c.createdAt=c.updatedAt=Date.now(); store.unshift(c); persist(); renderList(); toast("Duplicated"); }
+function delIntegration(id){ const it=store.find(x=>x.id===id); if(!confirm(`Delete “${it.name||"Untitled"}”? This can't be undone.`))return; store=store.filter(x=>x.id!==id); persist(); renderList(); toast("Deleted"); }
+
+/* ---------- builder render ---------- */
+function openBuilder(){
+  nav("builder");
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.remove("on"));
+  // migrate older saved/imported integrations that used a single baseUrl
+  if(cur.sandboxUrl===undefined){ cur.sandboxUrl=cur.baseUrl||""; cur.prodUrl=cur.baseUrl||""; }
+  if(cur.tested===undefined) cur.tested=false;
+  if(cur.prodReady===undefined) cur.prodReady=false;
+  $("b-title").textContent = cur.name || "Build an integration";
+  $("b-eyebrow").textContent = store.some(x=>x.id===cur.id) ? "Editing connector" : "New connector";
+  $("f-name").value=cur.name; $("f-vendor").value=cur.vendor; $("f-category").value=cur.category;
+  $("f-sandboxurl").value=cur.sandboxUrl||""; $("f-produrl").value=cur.prodUrl||"";
+  $("f-desc").value=cur.desc; $("f-auth").value=cur.auth.type;
+  renderAuth(); renderEndpoints(); renderMappings(); syncLive();
+}
+function collectDetails(){
+  cur.name=$("f-name").value.trim(); cur.vendor=$("f-vendor").value.trim();
+  cur.category=$("f-category").value;
+  cur.sandboxUrl=$("f-sandboxurl").value.trim(); cur.prodUrl=$("f-produrl").value.trim();
+  cur.desc=$("f-desc").value;
+  if(cur.vendor) cur.color = TEMPLATES.find(t=>t.vendor===cur.vendor)?.color || vColor(cur.vendor);
+}
+
+/* auth */
+function renderAuth(){
+  const t=$("f-auth").value; cur.auth.type=t; defaultAuth(cur.auth);
+  const a=cur.auth; let h="";
+  if(t==="apiKey") h=`
+    <div class="row r3">
+      <div class="field"><label>Key name</label><input class="ctrl mono" id="a-keyName" value="${esc(a.keyName)}" oninput="cur.auth.keyName=this.value;renderCode()"></div>
+      <div class="field"><label>Send in</label><select class="ctrl" id="a-in" onchange="cur.auth.in=this.value;renderCode()"><option value="header"${a.in==="header"?" selected":""}>Header</option><option value="query"${a.in==="query"?" selected":""}>Query param</option></select></div>
+      <div class="field"><label>Value <span class="help">(stored locally)</span></label><input class="ctrl mono" type="password" value="${esc(a.keyValue)}" oninput="cur.auth.keyValue=this.value"></div>
+    </div>`;
+  else if(t==="bearer") h=`<div class="field"><label>Token <span class="help">(stored locally)</span></label><input class="ctrl mono" type="password" value="${esc(a.token)}" oninput="cur.auth.token=this.value"></div>`;
+  else if(t==="basic") h=`<div class="row r2"><div class="field"><label>Username</label><input class="ctrl mono" value="${esc(a.user)}" oninput="cur.auth.user=this.value"></div><div class="field"><label>Password</label><input class="ctrl mono" type="password" value="${esc(a.pass)}" oninput="cur.auth.pass=this.value"></div></div>`;
+  else if(t==="oauth2") h=`
+    <div class="row r2">
+      <div class="field"><label>Token URL</label><input class="ctrl mono" value="${esc(a.tokenUrl)}" oninput="cur.auth.tokenUrl=this.value" placeholder="https://.../oauth/token"></div>
+      <div class="field"><label>Scope</label><input class="ctrl mono" value="${esc(a.scope)}" oninput="cur.auth.scope=this.value" placeholder="read:users"></div>
+      <div class="field"><label>Client ID</label><input class="ctrl mono" value="${esc(a.clientId)}" oninput="cur.auth.clientId=this.value"></div>
+      <div class="field"><label>Client secret</label><input class="ctrl mono" type="password" value="${esc(a.clientSecret)}" oninput="cur.auth.clientSecret=this.value"></div>
+    </div>`;
+  else h=`<p style="font-size:13px;color:var(--muted)">This API is called without authentication.</p>`;
+  $("authFields").innerHTML=h;
+  $("sub-2").textContent=authLabel(t);
+}
+
+/* endpoints */
+function renderEndpoints(){
+  const wrap=$("epList");
+  wrap.innerHTML = cur.endpoints.map((e,i)=>`
+    <div class="endpoint">
+      <div class="ep-head">
+        <span class="method-pill m-${e.method}">${e.method}</span>
+        <input class="ctrl" style="flex:1" value="${esc(e.name)}" oninput="cur.endpoints[${i}].name=this.value;syncLive()" placeholder="Endpoint name">
+        <button class="btn sm danger" onclick="rmEndpoint(${i})">Remove</button>
+      </div>
+      <div class="row method" style="margin-bottom:12px">
+        <div class="field" style="margin:0"><label>Method</label>
+          <select class="ctrl" onchange="cur.endpoints[${i}].method=this.value;renderEndpoints();syncLive()">
+            ${["GET","POST","PUT","PATCH","DELETE"].map(m=>`<option${e.method===m?" selected":""}>${m}</option>`).join("")}
+          </select></div>
+        <div class="field" style="margin:0"><label>Path <span class="help">(appended to base URL)</span></label>
+          <input class="ctrl mono" value="${esc(e.path)}" oninput="cur.endpoints[${i}].path=this.value;syncLive();renderCode()" placeholder="/users"></div>
+      </div>
+      <div class="row r2">
+        <div><label style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Query params</label>
+          <div id="ep-${i}-q" style="margin-top:6px"></div>
+          <button class="add-row" onclick="cur.endpoints[${i}].query.push({k:'',v:''});renderEndpoints();renderCode()">+ add param</button></div>
+        <div><label style="font-size:12.5px;font-weight:600;color:var(--ink-2)">Headers</label>
+          <div id="ep-${i}-h" style="margin-top:6px"></div>
+          <button class="add-row" onclick="cur.endpoints[${i}].headers.push({k:'',v:''});renderEndpoints();renderCode()">+ add header</button></div>
+      </div>
+      ${["POST","PUT","PATCH"].includes(e.method)?`<div class="field" style="margin-top:14px"><label>Request body (JSON)</label><textarea class="ctrl" oninput="cur.endpoints[${i}].body=this.value;renderCode()" placeholder='{ "key": "value" }'>${esc(e.body)}</textarea></div>`:""}
+    </div>`).join("") || `<p style="font-size:13px;color:var(--muted);margin-bottom:12px">No endpoints yet — add the first request this connector makes.</p>`;
+  cur.endpoints.forEach((e,i)=>{ kvRender(`ep-${i}-q`, e.query, i, "query"); kvRender(`ep-${i}-h`, e.headers, i, "headers"); });
+  $("sub-3").textContent = cur.endpoints.length+" defined";
+  refreshTestSelect();
+}
+function kvRender(elId, arr, ei, kind){
+  const el=$(elId); if(!el)return;
+  el.innerHTML = arr.map((p,j)=>`
+    <div class="kv">
+      <input class="ctrl" value="${esc(p.k)}" placeholder="key" oninput="cur.endpoints[${ei}].${kind}[${j}].k=this.value;renderCode()">
+      <input class="ctrl" value="${esc(p.v)}" placeholder="value" oninput="cur.endpoints[${ei}].${kind}[${j}].v=this.value;renderCode()">
+      <button onclick="cur.endpoints[${ei}].${kind}.splice(${j},1);renderEndpoints();renderCode()">×</button>
+    </div>`).join("");
+}
+function addEndpoint(){ cur.endpoints.push({id:uid(),name:"New request",method:"GET",path:"/",query:[],headers:[],body:""}); renderEndpoints(); syncLive(); }
+function rmEndpoint(i){ cur.endpoints.splice(i,1); renderEndpoints(); syncLive(); }
+
+/* mappings */
+function renderMappings(){
+  $("mapList").innerHTML = cur.mappings.map((m,i)=>`
+    <div class="map-row">
+      <input class="ctrl mono" value="${esc(m.canonical)}" placeholder="email" oninput="cur.mappings[${i}].canonical=this.value;syncLive()">
+      <span class="arrow">←</span>
+      <input class="ctrl mono" value="${esc(m.source)}" placeholder="data.user.email" oninput="cur.mappings[${i}].source=this.value">
+      <button class="kv" style="display:block;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:18px" onclick="cur.mappings.splice(${i},1);renderMappings();syncLive()">×</button>
+    </div>`).join("");
+  $("sub-4").textContent = cur.mappings.length ? cur.mappings.length+" fields" : "Map response → schema";
+}
+function addMapping(){ cur.mappings.push({canonical:"",source:""}); renderMappings(); syncLive(); }
+
+/* live pipeline + subtitles */
+function syncLive(){
+  collectDetails();
+  $("saveName").textContent = cur.name || "Untitled integration";
+  $("b-title").textContent = cur.name || "Build an integration";
+  const ep = cur.endpoints[0];
+  $("pipeline").innerHTML = [
+    node("Source API", cur.vendor || cur.sandboxUrl || "—", !!(cur.vendor||cur.sandboxUrl)),
+    node("Auth", authLabel(cur.auth.type), cur.auth.type!=="none"),
+    node("Endpoint", ep ? ep.method+" "+(ep.path||"/") : "none", !!ep),
+    node("Mapping", cur.mappings.filter(m=>m.canonical).length+" fields", cur.mappings.some(m=>m.canonical)),
+    node("Your schema", "normalized", cur.mappings.some(m=>m.canonical&&m.source)),
+  ].join("");
+  $("sub-1").textContent = "Name & base URLs";
+  renderCode();
+  renderReadiness();
+}
+function node(k,v,live){ return `<div class="pnode${live?" live":""}"><div class="k">${k}</div><div class="v${live?"":" dim"}">${esc(v)}</div></div>`; }
+
+/* ---------- request building ---------- */
+function buildUrl(ep, literal, env){
+  let base=((env==="prod"?cur.prodUrl:cur.sandboxUrl)||"").replace(/\/$/,"");
+  let path=ep.path||"";
+  let url = base + (path.startsWith("/")||!path?path:"/"+path);
+  const qs=[];
+  (ep.query||[]).forEach(p=>{ if(p.k) qs.push(encodeURIComponent(p.k)+"="+encodeURIComponent(p.v)); });
+  if(cur.auth.type==="apiKey" && cur.auth.in==="query") qs.push(encodeURIComponent(cur.auth.keyName)+"="+(literal?encodeURIComponent(cur.auth.keyValue||""):"$API_KEY"));
+  if(qs.length) url += (url.includes("?")?"&":"?")+qs.join("&");
+  return url;
+}
+function buildHeaders(literal){
+  const h={};
+  const ep=currentTestEp(); if(ep)(ep.headers||[]).forEach(p=>{ if(p.k) h[p.k]=p.v; });
+  const a=cur.auth;
+  if(a.type==="bearer") h["Authorization"]="Bearer "+(literal?(a.token||""):"$TOKEN");
+  if(a.type==="apiKey" && a.in==="header") h[a.keyName||"X-API-Key"]=literal?(a.keyValue||""):"$API_KEY";
+  if(a.type==="basic") h["Authorization"]="Basic "+(literal?btoa((a.user||"")+":"+(a.pass||"")):"$BASIC_B64");
+  if(ep && ["POST","PUT","PATCH"].includes(ep.method) && ep.body) h["Content-Type"]=h["Content-Type"]||"application/json";
+  return h;
+}
+function currentTestEp(){ const i=+($("f-testep").value||0); return cur.endpoints[i]; }
+function refreshTestSelect(){
+  const sel=$("f-testep"); if(!sel)return;
+  sel.innerHTML = cur.endpoints.map((e,i)=>`<option value="${i}">${esc(e.method+" "+(e.name||e.path))}</option>`).join("");
+  renderCode();
+}
+
+/* ---------- code generation ---------- */
+function codeTab(c){ codeView=c; document.querySelectorAll("#codeTabs button").forEach(b=>b.classList.toggle("on",b.dataset.c===c)); renderCode(); }
+function renderCode(){
+  const ep=currentTestEp();
+  if(codeView==="response"){
+    if(lastTest){ $("outBody").textContent=lastTest.body; $("outUrl").textContent=lastTest.url;
+      $("outStatus").className="status "+(lastTest.ok?"st-ok":"st-bad"); $("outStatus").textContent=lastTest.status; }
+    else { $("outBody").textContent="Configure an endpoint, then hit “Send request”. Live calls work for CORS-enabled APIs; either way the generated code runs anywhere."; }
+    return;
+  }
+  if(!ep){ $("outBody").textContent="No endpoint selected."; return; }
+  const url=buildUrl(ep,false), headers=buildHeaders(false);
+  $("outUrl").textContent=url; $("outStatus").className="status st-idle"; $("outStatus").textContent=ep.method;
+  let out="";
+  if(codeView==="curl"){
+    const lines=["curl -X "+ep.method+" '"+url+"'"];
+    Object.entries(headers).forEach(([k,v])=>lines.push("  -H '"+k+": "+v+"'"));
+    if(ep.body && ["POST","PUT","PATCH"].includes(ep.method)) lines.push("  -d '"+ep.body.replace(/\n/g,"")+"'");
+    out=lines.join(" \\\n");
+  } else if(codeView==="fetch"){
+    out="const res = await fetch("+JSON.stringify(url)+", {\n  method: "+JSON.stringify(ep.method)+",\n  headers: "+JSON.stringify(headers,null,2).replace(/\n/g,"\n  ")+
+      (ep.body&&["POST","PUT","PATCH"].includes(ep.method)?",\n  body: JSON.stringify("+(safeJson(ep.body))+")":"")+"\n});\nconst data = await res.json();";
+  } else if(codeView==="python"){
+    const hdr=Object.entries(headers).map(([k,v])=>"    "+JSON.stringify(k)+": "+JSON.stringify(v)).join(",\n");
+    out="import requests\n\nheaders = {\n"+hdr+"\n}\n\nres = requests."+ep.method.toLowerCase()+"("+JSON.stringify(url)+", headers=headers"+
+      (ep.body&&["POST","PUT","PATCH"].includes(ep.method)?", json="+(ep.body.trim()||"{}"):"")+")\ndata = res.json()";
+  }
+  $("outBody").textContent=out;
+}
+function safeJson(s){ try{ return JSON.stringify(JSON.parse(s)); }catch(e){ return JSON.stringify(s); } }
+
+/* ---------- live test (env: sandbox | prod) ---------- */
+async function runTest(env){
+  env = env||"sandbox";
+  const ep=currentTestEp();
+  const base = env==="prod"?cur.prodUrl:cur.sandboxUrl;
+  if(!ep || !base){ toast("Add the "+env+" base URL and an endpoint first.", "bad"); return; }
+  codeTab("response");
+  const useProxy = (transport==="proxy") || (transport==="auto" && proxyAvailable) || env==="prod" && proxyAvailable;
+  $("outStatus").className="status st-idle"; $("outStatus").textContent="sending…";
+  $("outBody").textContent="Running "+env+" request via "+(useProxy?"server proxy":"browser")+"…";
+  const url=buildUrl(ep,true,env), headers=buildHeaders(true);
+  const body=(ep.body && ["POST","PUT","PATCH"].includes(ep.method)) ? ep.body : undefined;
+  const t0=performance.now();
+  let okFlag=false;
+  try{
+    let text, statusLabel;
+    if(useProxy){
+      const pr=await fetch("api/proxy",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({method:ep.method,url,headers,body})});
+      const data=await pr.json();
+      if(!pr.ok || data.error) throw new Error(data.error||("proxy "+pr.status));
+      okFlag=data.ok; text=typeof data.body==="string"?data.body:JSON.stringify(data.body);
+      statusLabel=data.status+" "+(data.statusText||"")+" · "+(data.ms||0)+"ms · "+env+" · proxy";
+    } else {
+      const opt={ method:ep.method, headers }; if(body) opt.body=body;
+      const res=await fetch(url,opt); okFlag=res.ok; text=await res.text();
+      statusLabel=res.status+" "+res.statusText+" · "+Math.round(performance.now()-t0)+"ms · "+env+" · browser";
+    }
+    let pretty; try{ pretty=JSON.stringify(JSON.parse(text),null,2); }catch(e){ pretty=text; }
+    if(pretty.length>20000) pretty=pretty.slice(0,20000)+"\n…(truncated)";
+    lastTest={ ok:okFlag, status:statusLabel, url, body:pretty||"(empty response)" };
+    if(cur.mappings.some(m=>m.canonical&&m.source)) lastTest.body+="\n\n/* — mapped preview — */\n"+mapPreview(text);
+    if(okFlag && env==="sandbox"){ cur.tested=true; toast("Sandbox test passed — production unlocked","ok"); }
+  }catch(err){
+    lastTest={ ok:false, status:(useProxy?"proxy error":"network / CORS")+" · "+env, url,
+      body:(useProxy?"The server proxy couldn't complete the request:\n"+err.message
+        :"Request blocked or failed:\n"+err.message+"\n\nUsually CORS — the API didn't allow a browser call. Switch to the server proxy, or copy the cURL/Python snippet.") };
+  }
+  renderCode(); renderReadiness();
+}
+
+/* ---------- production readiness ---------- */
+function requiredEnvVars(){
+  const v=[]; const a=cur.auth;
+  if(a.type==="bearer") v.push({name:"TOKEN", for:"Authorization: Bearer ${ENV:TOKEN}"});
+  if(a.type==="apiKey") v.push({name:"API_KEY", for:(a.keyName||"X-API-Key")+": ${ENV:API_KEY}"});
+  if(a.type==="basic") v.push({name:"BASIC_B64", for:"Authorization: Basic ${ENV:BASIC_B64}"});
+  if(a.type==="oauth2"){ v.push({name:"CLIENT_ID",for:"OAuth client id"}); v.push({name:"CLIENT_SECRET",for:"OAuth client secret"}); }
+  return v;
+}
+function renderReadiness(){
+  if(!$("checklist")) return;
+  const checks=[
+    ["Name set", !!cur.name],
+    ["Production base URL set", !!cur.prodUrl],
+    ["Authentication configured", cur.auth.type!=="none"],
+    ["At least one endpoint", cur.endpoints.length>0],
+    ["At least one field mapped", cur.mappings.some(m=>m.canonical&&m.source)],
+    ["Passed a sandbox test", !!cur.tested],
+  ];
+  $("checklist").innerHTML = checks.map(([t,ok])=>`<div class="chk ${ok?'done':''}"><span class="box">${ok?'✓':''}</span>${esc(t)}</div>`).join("");
+  // env vars
+  const ev=requiredEnvVars();
+  $("envvars").innerHTML = ev.length
+    ? ev.map(e=>`<div class="envvar"><span class="nm">${esc(e.name)}</span><span class="for">${esc(e.for)}</span></div>`).join("")
+    : `<div class="prod-hint">No secrets required for this auth type.</div>`;
+  // deploy snippet
+  const ep=currentTestEp();
+  const proxyReq = ep ? JSON.stringify({method:ep.method,url:buildUrl(ep,false,"prod"),
+    headers:buildHeaders(false)},null,2) : "{}";
+  $("deployCode").textContent =
+    "# 1) Build & run the production server (zero dependencies, Node 18+)\n"+
+    "docker compose up --build       # or: node server/index.js\n\n"+
+    "# 2) Set secrets as env vars (referenced as ${ENV:NAME})\n"+
+    ev.map(e=>"export "+e.name+"=...").join("\n")+(ev.length?"\n":"")+"\n"+
+    "# 3) The app calls the built-in proxy with this request:\n"+
+    "POST /api/proxy\n"+proxyReq;
+  // checklist gating
+  const ready = checks.every(c=>c[1]);
+  const btn=$("promoteBtn"), hint=$("promoteHint");
+  if(btn){ btn.disabled=!ready && !cur.prodReady;
+    if(cur.prodReady){ btn.textContent="✓ Production-ready"; btn.disabled=true; hint.textContent="Promoted. Saving keeps this status."; }
+    else { btn.textContent="Mark ready for production"; hint.textContent = ready?"All checks pass — you're good to go.":"Complete the checklist (a sandbox test is required)."; }
+  }
+  // stage states
+  const ss=$("sandboxState"); if(ss){ ss.textContent=cur.tested?"Tested ✓":"Not tested"; ss.className="stage-state"+(cur.tested?" ok":""); }
+  const ps=$("prodState"); if(ps){ ps.textContent=cur.prodReady?"Ready ✓":(cur.tested?"Awaiting promotion":"Draft"); ps.className="stage-state"+(cur.prodReady?" ready":""); }
+  $("sub-5").textContent = cur.sandboxUrl?"against sandbox URL":"set a sandbox URL";
+  $("sub-6").textContent = cur.prodReady?"production-ready":"readiness & deploy";
+}
+function promote(){
+  collectDetails();
+  const ready=[!!cur.name,!!cur.prodUrl,cur.auth.type!=="none",cur.endpoints.length>0,cur.mappings.some(m=>m.canonical&&m.source),!!cur.tested].every(Boolean);
+  if(!ready){ toast("Finish the readiness checklist first.","bad"); return; }
+  cur.prodReady=true; renderReadiness(); toast("Marked production-ready 🚀","ok");
+}
+
+/* ---------- sandbox vs production server detection ---------- */
+async function detectMode(){
+  try{ const r=await fetch("api/health",{cache:"no-store"}); if(r.ok){ const d=await r.json(); if(d&&d.proxy) proxyAvailable=true; } }
+  catch(e){ proxyAvailable=false; }
+  const badge=$("modeBadge"), txt=$("modeText"), tp=$("t-proxy");
+  if(proxyAvailable){ badge.classList.add("prod"); txt.textContent="Production server"; if(tp) tp.disabled=false; }
+  else { badge.classList.remove("prod"); txt.textContent="Sandbox (static)"; if(tp) tp.disabled=true; }
+}
+function setTransport(t){
+  if(t==="proxy" && !proxyAvailable){ toast("Server proxy isn't running. Start the production server (see README).","bad"); return; }
+  transport=t;
+  document.querySelectorAll("#transport button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
+}
+function getPath(obj, path){
+  if(!path) return undefined;
+  const parts=path.replace(/\[\]/g,".[]").split(".").filter(Boolean);
+  let ctx=obj;
+  for(let i=0;i<parts.length;i++){
+    const p=parts[i];
+    if(p==="[]"){ if(!Array.isArray(ctx))return undefined; const rest=parts.slice(i+1).join("."); return ctx.slice(0,3).map(o=>getPath(o,rest)); }
+    if(ctx==null)return undefined; ctx=ctx[p];
+  }
+  return ctx;
+}
+function mapPreview(text){
+  let data; try{ data=JSON.parse(text); }catch(e){ return "(response isn't JSON — can't map)"; }
+  const out={};
+  cur.mappings.forEach(m=>{ if(m.canonical&&m.source){ const v=getPath(data,m.source); out[m.canonical]=v===undefined?"(not found)":v; }});
+  return JSON.stringify(out,null,2);
+}
+
+/* ---------- save / export / import ---------- */
+function saveIntegration(){
+  collectDetails();
+  if(!cur.name){ toast("Give the integration a name first.", "bad"); $("f-name").focus(); return; }
+  cur.updatedAt=Date.now();
+  const idx=store.findIndex(x=>x.id===cur.id);
+  if(idx>=0) store[idx]=JSON.parse(JSON.stringify(cur)); else store.unshift(JSON.parse(JSON.stringify(cur)));
+  persist(); toast("Saved","ok"); nav("integrations");
+}
+function exportCurrent(){ collectDetails(); download(cur, (cur.name||"integration")); }
+function exportOne(id){ download(store.find(x=>x.id===id), store.find(x=>x.id===id).name||"integration"); }
+function download(obj, name){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download=name.replace(/[^a-z0-9]+/gi,"-").toLowerCase()+".integration.json"; a.click();
+  URL.revokeObjectURL(a.href); toast("Exported JSON","ok");
+}
+function importJson(){ $("fileInput").click(); }
+$("fileInput").addEventListener("change", (e)=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const o=JSON.parse(r.result); o.id=uid(); o.createdAt=o.updatedAt=Date.now();
+    o.endpoints=o.endpoints||[]; o.mappings=o.mappings||[]; o.auth=o.auth||{type:"none"};
+    store.unshift(o); persist(); renderList(); nav("integrations"); toast("Imported","ok");
+  }catch(err){ toast("That file isn't a valid integration JSON.","bad"); } };
+  r.readAsText(f); e.target.value="";
+});
+
+/* ---------- toast ---------- */
+let tt; function toast(msg,kind){ const t=$("toast"); t.textContent=msg; t.className="toast show "+(kind||""); clearTimeout(tt); tt=setTimeout(()=>t.className="toast",2400); }
+
+/* ---------- boot ---------- */
+load(); renderList(); renderCatalog(); detectMode();
+</script>
+</body>
+</html>
